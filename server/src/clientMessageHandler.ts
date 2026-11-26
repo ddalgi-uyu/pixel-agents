@@ -270,6 +270,17 @@ export function handleClientMessage(
       break;
     }
 
+    case 'agentSay': {
+      // A user typed a line for their character: broadcast it as a speech bubble
+      // to every office. Privileged-only (refuseReadOnly gated this at the top).
+      const id = msg.id as number;
+      const text = (msg.text as string | undefined) ?? '';
+      if (store.has(id)) {
+        store.broadcast({ type: 'agentSpeech', id, text: text.slice(0, 200) });
+      }
+      break;
+    }
+
     case 'requestDiagnostics':
       // Point-to-point reply to the requesting socket (NOT a broadcast).
       send({ type: 'agentDiagnostics', agents: buildAgentDiagnostics(store) });

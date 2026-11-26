@@ -177,6 +177,7 @@ components:
         - $ref: '#/components/schemas/SearchConversations'
         - $ref: '#/components/schemas/ResumeConversation'
         - $ref: '#/components/schemas/RequestDiagnostics'
+        - $ref: '#/components/schemas/AgentSay'
       discriminator: type
 
     # ── Server message variants ────────────────────────────────────
@@ -1302,6 +1303,19 @@ components:
           const: focusAgent
         id:
           type: integer
+
+    AgentSay:
+      description: Make an agent's character say something (a speech bubble the user typed).
+      type: object
+      additionalProperties: false
+      required: [type, id, text]
+      properties:
+        type:
+          const: agentSay
+        id:
+          type: integer
+        text:
+          type: string
 
     CloseAgent:
       description: Close (dismiss) an agent.

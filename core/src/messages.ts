@@ -91,7 +91,8 @@ export type ClientMessage =
   | RequestConversations
   | SearchConversations
   | ResumeConversation
-  | RequestDiagnostics;
+  | RequestDiagnostics
+  | AgentSay;
 
 export interface ProviderCapabilities {
   type: 'providerCapabilities';
@@ -728,4 +729,10 @@ export interface ResumeConversation {
 
 export interface RequestDiagnostics {
   type: 'requestDiagnostics';
+}
+
+export interface AgentSay {
+  type: 'agentSay';
+  id: number;
+  text: string;
 }

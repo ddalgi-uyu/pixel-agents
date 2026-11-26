@@ -12,6 +12,7 @@ import { EditActionBar } from './components/EditActionBar.js';
 import { IntroBubble } from './components/IntroBubble.js';
 import { LoadingScene } from './components/LoadingScene.js';
 import { MigrationNotice } from './components/MigrationNotice.js';
+import { SpeechBar } from './components/SpeechBar.js';
 import { SettingsModal } from './components/SettingsModal.js';
 import { TerminalDrawer } from './components/TerminalDrawer.js';
 import { TerminalHideRibbon } from './components/TerminalHideRibbon.js';
@@ -583,6 +584,9 @@ function App() {
               mobile={isMobile}
             />
           )}
+
+          {/* Type a line to make your own character speak (standalone browser). */}
+          <SpeechBar focusedAgentId={focusedAgentId} getOfficeState={getOfficeState} />
 
           {/* Vignette overlay */}
           <div

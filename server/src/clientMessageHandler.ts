@@ -109,6 +109,17 @@ const KEY_SHOW_AREAS = 'pixel-agents.showAreas';
 const KEY_BYPASS_PERMISSIONS = 'pixel-agents.bypassPermissions';
 const KEY_SHOW_HOST_DIRECTORIES = 'pixel-agents.showHostDirectories';
 
+/** One character per user: the agents users have claimed as their character.
+ *  Only these are drawn on the map. In-memory — agent ids don't survive a
+ *  restart anyway, so users re-pick after one (the office prompts them). */
+const claimedAgentIds = new Set<number>();
+
+/** The claimedAgents broadcast, pruned to agents that still exist. */
+function claimedAgentsMessage(store: AgentStateStore): Record<string, unknown> {
+  const ids = [...claimedAgentIds].filter((id) => store.has(id));
+  return { type: 'claimedAgents', ids };
+}
+
 /** The provider whose conversations the sidebar lists and resumes: the first
  *  that names them and can launch (HookProvider.conversationTitle). */
 const conversationProvider = hookProviders.find(
@@ -267,6 +278,18 @@ export function handleClientMessage(
         ctx.ptyManager?.dispose(id);
         runtime.closeAgent(id);
       }
+      break;
+    }
+
+    case 'claimAgent': {
+      // One character per user: a user claims ONE agent as their character;
+      // only claimed agents are drawn on the map. previousId releases the
+      // user's earlier claim when switching.
+      const id = msg.id as number;
+      const prev = msg.previousId as number | undefined;
+      if (typeof prev === 'number') claimedAgentIds.delete(prev);
+      if (store.has(id)) claimedAgentIds.add(id);
+      store.broadcast(claimedAgentsMessage(store));
       break;
     }
 
@@ -593,6 +616,9 @@ function handleWebviewReady(send: WsSend, ctx: ClientMessageContext): void {
   // a change (all refused by refuseReadOnly), so it must know before it draws
   // them.
   send({ type: 'officeAccess', readOnly: ctx.privileged !== true });
+
+  // Claimed characters (one per user): who is currently on the map.
+  send(claimedAgentsMessage(store));
 
   // 1. Provider capabilities (must arrive before any agent messages)
   send({

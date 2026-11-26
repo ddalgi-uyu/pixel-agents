@@ -27,6 +27,7 @@ export type ServerMessage =
   | AgentContextUsage
   | AgentScreenThumbnail
   | AgentSpeech
+  | ClaimedAgents
   | LayoutLoaded
   | FurnitureAssetsLoaded
   | CharacterProfilesLoaded
@@ -92,7 +93,8 @@ export type ClientMessage =
   | SearchConversations
   | ResumeConversation
   | RequestDiagnostics
-  | AgentSay;
+  | AgentSay
+  | ClaimAgent;
 
 export interface ProviderCapabilities {
   type: 'providerCapabilities';
@@ -230,6 +232,11 @@ export interface AgentSpeech {
   type: 'agentSpeech';
   id: number;
   text: string;
+}
+
+export interface ClaimedAgents {
+  type: 'claimedAgents';
+  ids: number[];
 }
 
 export interface LayoutLoaded {
@@ -735,4 +742,10 @@ export interface AgentSay {
   type: 'agentSay';
   id: number;
   text: string;
+}
+
+export interface ClaimAgent {
+  type: 'claimAgent';
+  id: number;
+  previousId?: number;
 }

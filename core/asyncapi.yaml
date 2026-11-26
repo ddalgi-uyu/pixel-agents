@@ -104,6 +104,8 @@ components:
         - $ref: '#/components/schemas/AgentScreenThumbnail'
         # Custom speech
         - $ref: '#/components/schemas/AgentSpeech'
+        # Claimed characters (one per user)
+        - $ref: '#/components/schemas/ClaimedAgents'
         # Layout
         - $ref: '#/components/schemas/LayoutLoaded'
         # Assets
@@ -178,6 +180,7 @@ components:
         - $ref: '#/components/schemas/ResumeConversation'
         - $ref: '#/components/schemas/RequestDiagnostics'
         - $ref: '#/components/schemas/AgentSay'
+        - $ref: '#/components/schemas/ClaimAgent'
       discriminator: type
 
     # ── Server message variants ────────────────────────────────────
@@ -329,6 +332,21 @@ components:
           description: >-
             Short label of the focused app (e.g. "💻 code"), shown as the
             monitor's title. Optional.
+
+    ClaimedAgents:
+      description: >-
+        The set of claimed agents — the only ones drawn as characters on the
+        map. Sent on connect and after every claim change.
+      type: object
+      additionalProperties: false
+      required: [type, ids]
+      properties:
+        type:
+          const: claimedAgents
+        ids:
+          type: array
+          items:
+            type: integer
 
     AgentSpeech:
       description: A custom line for an agent's character to say (speech bubble).
@@ -1302,6 +1320,21 @@ components:
         type:
           const: focusAgent
         id:
+          type: integer
+
+    ClaimAgent:
+      description: >-
+        A user picks ONE of their agents as their character: only claimed agents
+        appear on the map. previousId releases an earlier claim (switching).
+      type: object
+      additionalProperties: false
+      required: [type, id]
+      properties:
+        type:
+          const: claimAgent
+        id:
+          type: integer
+        previousId:
           type: integer
 
     AgentSay:

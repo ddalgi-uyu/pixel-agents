@@ -1323,8 +1323,23 @@ export class OfficeState {
   /** Everything the renderer draws: the agents plus, while the first-run ask
    *  is up, the consent greeter. This is the ONE place the greeter joins the
    *  agents — every other consumer reads `characters` and gets agents only. */
+  /** One character per user: only claimed agents (and their sub-agents) are
+   *  drawn. Empty set = nothing claimed yet; the map waits for users to pick. */
+  claimedAgentIds = new Set<number>();
+
+  setClaimedAgents(ids: number[]): void {
+    this.claimedAgentIds = new Set(ids);
+  }
+
+  /** Whether a character is on the map: claimed, or a sub-agent of a claimed
+   *  lead. The greeter is handled separately in getCharacters(). */
+  isCharacterVisible(ch: Character): boolean {
+    if (this.claimedAgentIds.has(ch.id)) return true;
+    return ch.isSubagent && ch.parentAgentId !== null && this.claimedAgentIds.has(ch.parentAgentId);
+  }
+
   getCharacters(): Character[] {
-    const chars = Array.from(this.characters.values());
+    const chars = Array.from(this.characters.values()).filter((ch) => this.isCharacterVisible(ch));
     if (this.greeter) chars.push(this.greeter);
     return chars;
   }
@@ -1335,8 +1350,9 @@ export class OfficeState {
   getCharacterAt(worldX: number, worldY: number): number | null {
     const chars = Array.from(this.characters.values()).sort((a, b) => b.y - a.y);
     for (const ch of chars) {
-      // Skip characters that are despawning
+      // Skip characters that are despawning or not on the map (unclaimed)
       if (ch.matrixEffect === 'despawn') continue;
+      if (!this.isCharacterVisible(ch)) continue;
       // Character sprite is 16x24, anchored bottom-center
       // Apply sitting offset to match visual position
       const sittingOffset = ch.state === CharacterState.TYPE ? CHARACTER_SITTING_OFFSET_PX : 0;

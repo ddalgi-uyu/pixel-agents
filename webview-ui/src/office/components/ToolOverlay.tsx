@@ -151,6 +151,8 @@ export function ToolOverlay({
       {allIds.map((id) => {
         const ch = officeState.characters.get(id);
         if (!ch) return null;
+        // One character per user: no labels for agents not on the map.
+        if (!officeState.isCharacterVisible(ch)) return null;
 
         const isSelected = selectedId === id;
         const isHovered = hoveredId === id;

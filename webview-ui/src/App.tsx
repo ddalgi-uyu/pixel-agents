@@ -189,17 +189,40 @@ function App() {
     const v = localStorage.getItem('pixelAgentsMeId');
     return v !== null && v !== '' ? Number(v) : null;
   });
-  const chooseMe = useCallback((id: number | null) => {
-    if (id === null) localStorage.removeItem('pixelAgentsMeId');
-    else localStorage.setItem('pixelAgentsMeId', String(id));
-    setMeId(id);
-  }, []);
+  // Remembers the last claimed id across the ⟳ null gap, so switching
+  // characters releases the old claim (one character per user).
+  const lastMeIdRef = useRef<number | null>(null);
+  const chooseMe = useCallback(
+    (id: number | null) => {
+      if (id === null) {
+        localStorage.removeItem('pixelAgentsMeId');
+      } else {
+        localStorage.setItem('pixelAgentsMeId', String(id));
+        const prev = meId ?? lastMeIdRef.current;
+        // Claim it: only claimed agents appear as characters on the map.
+        transport.send({
+          type: 'claimAgent',
+          id,
+          ...(prev !== null && prev !== id ? { previousId: prev } : {}),
+        });
+        lastMeIdRef.current = id;
+      }
+      if (id === null && meId !== null) lastMeIdRef.current = meId;
+      setMeId(id);
+    },
+    [meId],
+  );
   // Agent ids are NOT stable across server restarts: if the remembered "me" no
   // longer exists, forget it so the Who-are-you prompt shows again instead of a
   // chat box aimed at a ghost.
   useEffect(() => {
-    if (meId !== null && cardAgents.length > 0 && !cardAgents.includes(meId)) {
+    if (meId === null || cardAgents.length === 0) return;
+    if (!cardAgents.includes(meId)) {
       chooseMe(null);
+    } else {
+      // Re-assert the claim (idempotent) so a reconnect/server restart puts the
+      // remembered character back on the map.
+      transport.send({ type: 'claimAgent', id: meId });
     }
   }, [meId, cardAgents, chooseMe]);
   // Skipping the picker hides it (remembered); a small 💬 button reopens it.

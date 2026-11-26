@@ -70,7 +70,7 @@ export function SpeechBar({
           if (e.key === 'Enter') say();
         }}
         style={{
-          width: 260,
+          width: 'min(260px, 42vw)', // shrink on narrow windows
           background: 'var(--color-bg-dark)',
           color: 'var(--color-text)',
           border: '2px solid var(--color-border)',

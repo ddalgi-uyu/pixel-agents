@@ -194,6 +194,14 @@ function App() {
     else localStorage.setItem('pixelAgentsMeId', String(id));
     setMeId(id);
   }, []);
+  // Agent ids are NOT stable across server restarts: if the remembered "me" no
+  // longer exists, forget it so the Who-are-you prompt shows again instead of a
+  // chat box aimed at a ghost.
+  useEffect(() => {
+    if (meId !== null && cardAgents.length > 0 && !cardAgents.includes(meId)) {
+      chooseMe(null);
+    }
+  }, [meId, cardAgents, chooseMe]);
   // Skipping the picker hides it (remembered); a small 💬 button reopens it.
   const [meSkipped, setMeSkipped] = useState<boolean>(
     () => isBrowserRuntime && localStorage.getItem('pixelAgentsMeSkipped') === '1',

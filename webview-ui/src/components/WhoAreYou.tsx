@@ -40,7 +40,9 @@ export function WhoAreYou({
           background: 'var(--color-panel)',
           borderColor: 'var(--color-border)',
           boxShadow: '2px 2px 0px var(--color-bg-dark)',
-          maxWidth: 560,
+          width: 'min(560px, 92vw)', // responsive on narrow windows
+          maxHeight: '80vh',
+          overflowY: 'auto',
         }}
       >
         <div style={{ color: 'var(--color-text)', fontSize: 18, marginBottom: 4 }}>

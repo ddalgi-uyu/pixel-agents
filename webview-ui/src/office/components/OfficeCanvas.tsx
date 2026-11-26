@@ -254,6 +254,8 @@ export function OfficeCanvas({
     // sliding) would otherwise flash blank.
     const observer = new ResizeObserver(() => {
       resizeCanvas();
+      // Window/panel resized: re-fit and recenter the map to the new viewport.
+      fittedDimsRef.current = '';
       loop.redraw();
     });
     if (containerRef.current) {

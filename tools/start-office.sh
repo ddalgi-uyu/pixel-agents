@@ -44,7 +44,9 @@ PY
 # --- Restart cleanly ---
 pkill -f "dist/cli.js" 2>/dev/null || true
 sleep 1
-nohup node dist/cli.js --host 0.0.0.0 --port "$PORT" --allowed-host "$IP" > "$ROOT/office.log" 2>&1 &
+# --no-terminal: the office never exposes a shell — characters, live screens and
+# speech all still work; everyone (host included) runs `claude` in their own terminal.
+nohup node dist/cli.js --host 0.0.0.0 --port "$PORT" --allowed-host "$IP" --no-terminal > "$ROOT/office.log" 2>&1 &
 sleep 4
 
 if ! curl -s -o /dev/null --max-time 5 "http://127.0.0.1:$PORT/api/health"; then

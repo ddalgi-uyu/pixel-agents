@@ -8,6 +8,9 @@ export interface ServerTarget {
   pid: number;
   token: string;
   debugLog?: string;
+  /** Host to POST to. Absent for local registry servers (loopback); set only
+   *  for a remote office configured via env (friends over LAN). */
+  host?: string;
 }
 
 /**

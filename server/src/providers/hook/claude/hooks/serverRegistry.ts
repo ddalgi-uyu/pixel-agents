@@ -97,6 +97,28 @@ export function liveServers(debug: ScriptDebug, label: string): ServerTarget[] |
   }
 }
 
+/**
+ * A remote office to also deliver to, configured by env for friends over LAN:
+ *   PIXEL_AGENTS_OFFICE        the host's URL, e.g. http://192.168.31.191:3100
+ *   PIXEL_AGENTS_OFFICE_TOKEN  that server's token (printed in its URL)
+ * Returns [] when unset or malformed. pid is synthetic (0): these targets never
+ * come from the registry, so liveness pruning doesn't apply.
+ */
+export function remoteServers(debug: ScriptDebug): ServerTarget[] {
+  const url = process.env['PIXEL_AGENTS_OFFICE'];
+  const token = process.env['PIXEL_AGENTS_OFFICE_TOKEN'];
+  if (!url || !token) return [];
+  try {
+    const u = new URL(url);
+    const port = Number(u.port) || (u.protocol === 'https:' ? 443 : 80);
+    debug(`remote-office host=${u.hostname} port=${port}`);
+    return [{ host: u.hostname, port, token, pid: 0 }];
+  } catch (e) {
+    debug(`remote-office-skip err=${e instanceof Error ? e.message : String(e)}`);
+    return [];
+  }
+}
+
 /** One delivery: where it goes on the server, what it carries, how it is
  *  named in the debug log, and how long to wait. */
 export interface ServerPost {
@@ -120,7 +142,7 @@ export function postToServer(server: ServerTarget, post: ServerPost): Promise<vo
     try {
       const req = http.request(
         {
-          hostname: '127.0.0.1',
+          hostname: server.host ?? '127.0.0.1',
           port: server.port,
           path: urlPath,
           method: 'POST',

@@ -1,7 +1,9 @@
 import * as fs from 'fs';
 
 import { HOOK_API_PREFIX } from '../../../../constants.js';
-import { liveServers, postToServer } from './serverRegistry.js';
+import * as os from 'os';
+
+import { liveServers, postToServer, remoteServers } from './serverRegistry.js';
 
 /** Per-server POST timeout. */
 const HOOK_POST_TIMEOUT_MS = 2000;
@@ -48,8 +50,11 @@ async function main(): Promise<void> {
   // Multi-server fan-out (D4): deliver to every live server in the registry,
   // or the single legacy server.json when the registry has no live entries.
   const label = `event=${eventName} sid=${sid}`;
-  const servers = liveServers(hookDebug, label);
-  if (servers === null) process.exit(0);
+  // Deliver to local registry servers AND any remote office set via env
+  // (PIXEL_AGENTS_OFFICE[_TOKEN]) so a friend's events reach the shared host.
+  const local = liveServers(hookDebug, label);
+  const servers = [...(local ?? []), ...remoteServers(hookDebug)];
+  if (servers.length === 0) process.exit(0);
 
   // Adopt the first live server's debug-log path if the env var didn't reach
   // us (diagnostic-only; harmless if more than one server has it set).
@@ -58,6 +63,9 @@ async function main(): Promise<void> {
     if (withDebugLog?.debugLog) debugLogPath = withDebugLog.debugLog;
   }
 
+  // Tag the event with this machine so a remote office can label the character
+  // by hostname (ignored by a local server, which labels by directory).
+  if (data['hostname'] === undefined) data['hostname'] = os.hostname();
   const body = JSON.stringify(data);
   await Promise.all(
     servers.map((server) =>

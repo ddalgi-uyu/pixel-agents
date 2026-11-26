@@ -94,7 +94,10 @@ export function OfficeCanvas({
   const isEraseDraggingRef = useRef(false);
   // Zoom scroll accumulator for trackpad pinch sensitivity
   const zoomAccumulatorRef = useRef(0);
-  const didFitRef = useRef(false);
+  // Which layout (cols x rows) the view was last auto-fitted to. Re-fits when
+  // the dimensions change — crucially when the SAVED layout arrives after the
+  // first frames already fitted against the small default layout.
+  const fittedDimsRef = useRef('');
   // Clamp pan so the map edge can't go past a margin inside the viewport
   const clampPan = useCallback(
     (px: number, py: number): { x: number; y: number } => {
@@ -144,15 +147,16 @@ export function OfficeCanvas({
         const w = canvas.width;
         const h = canvas.height;
 
-        // One-time auto-fit on first load: pick the largest integer zoom at which
-        // the whole map fits the viewport, and recenter (pan 0) — so the office
-        // is fully visible without manual panning. Leave ~10% at the bottom for
-        // the toolbar/chat bar. Manual zoom afterwards is preserved.
-        // Guard on a settled, full-size canvas (w >= 600) so we don't fit against
-        // an un-laid-out 0-width frame and shrink to nothing.
-        if (!didFitRef.current && !isEditMode && w >= 600 && h >= 400) {
+        // Auto-fit: pick the largest integer zoom at which the whole map fits the
+        // viewport, and recenter (pan 0) — so the office is fully visible without
+        // manual panning. Runs once per layout SIZE (re-fitting when the saved
+        // layout arrives and replaces the default one); manual zoom afterwards is
+        // preserved until the layout dimensions change. Guard on a settled,
+        // full-size canvas so we don't fit against an un-laid-out frame.
+        if (!isEditMode && w >= 600 && h >= 400) {
           const layout = officeState.getLayout();
-          if (layout.cols > 0 && layout.rows > 0) {
+          const dims = `${layout.cols}x${layout.rows}`;
+          if (layout.cols > 0 && layout.rows > 0 && fittedDimsRef.current !== dims) {
             const fit = Math.max(
               ZOOM_MIN,
               Math.min(
@@ -162,7 +166,7 @@ export function OfficeCanvas({
                 ),
               ),
             );
-            didFitRef.current = true;
+            fittedDimsRef.current = dims;
             panRef.current = { x: 0, y: 0 };
             if (fit !== zoom) {
               onZoomChange(fit);

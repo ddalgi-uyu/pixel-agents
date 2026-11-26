@@ -34,6 +34,7 @@ Claude Code is supported today; Codex, Gemini, Cursor, and others are on the roa
 ## Features
 
 - **One agent, one character** — every agent terminal gets its own animated character
+- **Share an office with friends over your LAN** (this fork) — everyone runs their own Claude Code on their own machine; your character joins one shared office labelled by your computer, with an optional live thumbnail of your focused window and custom speech. [Jump to setup](#share-an-office-with-your-friends-lan-multiplayer-)
 - **Live activity tracking** — characters animate based on what the agent is actually doing (writing, reading, running commands). Sub-agents and teammates show up as their own characters
 - **Notifications** — speech bubbles, plus optional chimes, when an agent needs input or permission or finishes its turn
 - **Office layout editor** — design your office with floors, walls, furniture, and named Areas; layouts are saved across windows, export as JSON, and take external asset packs
@@ -112,6 +113,82 @@ The printed URL carries a `?token=`. Without it you can watch the office in a so
 4. On your phone, open `https://my-computer.my-tailnet.ts.net/?token=…` (the `?token=` from the URL the CLI printed) and add it to the home screen. The fixed port keeps that shortcut working across restarts.
 
 Only devices on your tailnet can reach it.
+
+## Share an office with your friends (LAN multiplayer) ✨
+
+> Added in this fork. Everyone runs their **own** Claude Code on their **own** machine (your chats stay private) — only your character's activity, a live thumbnail of your focused window, and anything you choose to "say" are shared. You all appear together in one office.
+
+### 1. Host — start the shared office
+
+On one machine (the host), on your Wi-Fi/LAN:
+
+```bash
+node dist/cli.js --host 0.0.0.0 --port 3100 --allowed-host <your-lan-ip>
+# (or: npx pixel-agents --host 0.0.0.0 --port 3100 --allowed-host <your-lan-ip>)
+```
+
+Then:
+
+1. Open the printed `http://<your-lan-ip>:3100/?token=…` URL.
+2. In **Settings**, turn on **Watch All Sessions** (so friends' agents are allowed in).
+3. Share two things with your friends: the **office URL** (`http://<your-lan-ip>:3100`) and the **token** (the `?token=` value).
+
+> ⚠️ The token lets anyone run commands as the host — only share it with friends you trust, on a network you trust.
+
+### 2. Friends — join the office
+
+Each friend, on their **own** machine:
+
+```bash
+# one-time: install the Pixel Agents hook (so Claude Code activity is detected)
+npx pixel-agents            # open it once, approve the hook, then you can close it
+
+# point your Claude Code at the host's office:
+export PIXEL_AGENTS_OFFICE="http://<host-lan-ip>:3100"
+export PIXEL_AGENTS_OFFICE_TOKEN="<token from the host>"
+
+# now just use Claude Code as normal — your character appears in the host's office,
+# labelled by your computer's name:
+claude
+```
+
+Open the office URL in a browser to watch everyone. Your character animates as your agent works (typing, reading, waiting).
+
+### 3. Show your screen (optional)
+
+Stream a small live thumbnail of your **focused window** to your character's "monitor" — plus an app badge (e.g. `💻 code`, `🤖 isaac`):
+
+```bash
+python3 tools/pixel_screen_capture.py
+```
+
+Only the focused window is sent, downscaled, about once a second. Needs Python 3; on Linux it uses `ffmpeg` + `xprop`/`xwininfo`, on Windows/macOS `pip install pillow`.
+
+### 4. Say something (optional)
+
+Make your character speak a custom line (shows in a speech bubble for a few seconds):
+
+```bash
+python3 tools/say.py "shipping the demo, back in 20!"
+python3 tools/say.py ""      # clear it
+```
+
+Both tools read the same `PIXEL_AGENTS_OFFICE` / `PIXEL_AGENTS_OFFICE_TOKEN` env vars and auto-detect your current Claude session.
+
+### Reference
+
+| Env var | Used by | Meaning |
+| --- | --- | --- |
+| `PIXEL_AGENTS_OFFICE` | hook, capture, say | The host office URL, e.g. `http://192.168.31.191:3100` |
+| `PIXEL_AGENTS_OFFICE_TOKEN` | hook, capture, say | The host server's token |
+| `PIXEL_AGENTS_SESSION` | capture, say | Claude session id to attach to (default: your newest session) |
+
+| Endpoint | Purpose |
+| --- | --- |
+| `POST /api/screen` `{sessionId, image, app?}` | Live window thumbnail (Bearer auth) |
+| `POST /api/say` `{sessionId, text}` | Custom speech bubble (Bearer auth) |
+
+Everything else (wandering, waiting bubbles, context gauges) already works per agent.
 
 ## Customizing the Office
 

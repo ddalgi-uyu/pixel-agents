@@ -185,6 +185,12 @@ python3 tools/pixel_screen_capture.py
 
 Only the focused window is sent, downscaled, about once a second. Needs Python 3; on Linux it uses `ffmpeg` + `xprop`/`xwininfo`, on Windows/macOS `pip install pillow`.
 
+**Show your agent instead of whatever you're looking at.** By default it captures your *focused* window — but if you're watching the office in a browser, that's what friends see. Pin it to your agent's terminal so it always shows the agent working (Linux/X11; the terminal must be visible, e.g. side-by-side):
+
+```bash
+PIXEL_AGENTS_CAPTURE_MATCH="claude" python3 tools/pixel_screen_capture.py   # or your terminal's name
+```
+
 ### 4. Say something (optional)
 
 Make your character speak a custom line (shows in a speech bubble for a few seconds):
@@ -203,6 +209,7 @@ Both tools read the same `PIXEL_AGENTS_OFFICE` / `PIXEL_AGENTS_OFFICE_TOKEN` env
 | `PIXEL_AGENTS_OFFICE` | hook, capture, say | The host office URL, e.g. `http://192.168.31.191:3100` |
 | `PIXEL_AGENTS_OFFICE_TOKEN` | hook, capture, say | The host server's token |
 | `PIXEL_AGENTS_SESSION` | capture, say | Claude session id to attach to (default: your newest session) |
+| `PIXEL_AGENTS_CAPTURE_MATCH` | capture | Pin capture to a window by title/class substring (e.g. your terminal) instead of the focused window |
 
 | Endpoint | Purpose |
 | --- | --- |

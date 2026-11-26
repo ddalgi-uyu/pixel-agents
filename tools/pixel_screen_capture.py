@@ -15,6 +15,10 @@ Config (env):
   PIXEL_AGENTS_OFFICE_TOKEN  that server's token                          (required)
   PIXEL_AGENTS_SESSION       Claude session id to attach to (default: newest
                              ~/.claude/projects/**/<id>.jsonl — your active session)
+  PIXEL_AGENTS_CAPTURE_MATCH pin capture to a window whose title/class contains
+                             this (e.g. "claude" or your terminal) instead of the
+                             focused window — shows the agent while you look
+                             elsewhere (Linux/X11; window must be visible)
   SCREEN_INTERVAL            seconds between frames (default 1.5)
   SCREEN_WIDTH               thumbnail width px (default 320)
 
@@ -37,6 +41,11 @@ import urllib.request
 OFFICE = os.environ.get("PIXEL_AGENTS_OFFICE", "").rstrip("/")
 TOKEN = os.environ.get("PIXEL_AGENTS_OFFICE_TOKEN", "")
 SESSION_ENV = os.environ.get("PIXEL_AGENTS_SESSION", "")
+# Pin capture to a specific window (e.g. your agent's terminal) by a substring of
+# its title/class, instead of whatever window is focused. Great for showing "what
+# the agent is doing" while you watch the office in another window.
+# (Linux/X11; the window must be visible — a fully-covered window can't be grabbed.)
+CAPTURE_MATCH = os.environ.get("PIXEL_AGENTS_CAPTURE_MATCH", "")
 INTERVAL = float(os.environ.get("SCREEN_INTERVAL", "1.5"))
 OUT_WIDTH = int(os.environ.get("SCREEN_WIDTH", "320"))
 QUALITY = int(os.environ.get("SCREEN_QUALITY", "70"))
@@ -194,6 +203,42 @@ def active_geom():
         return None
 
 
+# ---------- find a specific window (agent's terminal) ----------
+
+def match_window_geom(pattern):
+    """Geometry of the first visible window whose title/class contains `pattern`
+    (case-insensitive). Linux/X11 only; returns None elsewhere or if not found."""
+    if not pattern or not IS_LINUX:
+        return None
+    pat = pattern.lower()
+    try:
+        ids = re.findall(r"0x[0-9a-fA-F]+", _sh(["xprop", "-root", "_NET_CLIENT_LIST"]))
+        rw, rh = screen_size()
+        for wid in ids:
+            name = _sh(["xprop", "-id", wid, "_NET_WM_NAME"])
+            cls = _sh(["xprop", "-id", wid, "WM_CLASS"])
+            if pat not in (name + " " + cls).lower():
+                continue
+            info = _sh(["xwininfo", "-id", wid])
+            if "Map State: IsViewable" not in info:
+                continue  # minimized / unmapped — can't grab it
+
+            def g(p):
+                m = re.search(p, info)
+                return int(m.group(1)) if m else None
+
+            x, y = g(r"Absolute upper-left X:\s*(-?\d+)"), g(r"Absolute upper-left Y:\s*(-?\d+)")
+            w, h = g(r"Width:\s*(\d+)"), g(r"Height:\s*(\d+)")
+            if None in (x, y, w, h):
+                continue
+            x = max(0, min(x, rw - 2)); y = max(0, min(y, rh - 2))
+            w = max(2, min(w, rw - x)); h = max(2, min(h, rh - y))
+            return (x, y, w - w % 2, h - h % 2)
+    except Exception:
+        pass
+    return None
+
+
 # ---------- capture ----------
 
 def grab_jpeg(geom):
@@ -256,8 +301,9 @@ def main():
         print("❌ no Claude session found (no ~/.claude/projects/**/*.jsonl); "
               "set PIXEL_AGENTS_SESSION")
         sys.exit(1)
+    pin = f"pinned to window ~'{CAPTURE_MATCH}'" if CAPTURE_MATCH else "focused window"
     print(f"Screen capture → {OFFICE}/api/screen  session={session[:8]}…  "
-          f"every {INTERVAL}s, width={OUT_WIDTH}px. Ctrl+C to stop.")
+          f"({pin}, every {INTERVAL}s, width={OUT_WIDTH}px). Ctrl+C to stop.")
     last_session_check = 0.0
     try:
         while True:
@@ -266,7 +312,10 @@ def main():
             if not SESSION_ENV and now - last_session_check > 10:
                 session = discover_session() or session
                 last_session_check = now
-            jpg = grab_jpeg(active_geom())
+            geom = match_window_geom(CAPTURE_MATCH) if CAPTURE_MATCH else active_geom()
+            if geom is None:
+                geom = active_geom()  # pinned window not found/visible -> fall back
+            jpg = grab_jpeg(geom)
             if jpg:
                 try:
                     code = push(session, jpg, active_app())

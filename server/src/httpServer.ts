@@ -122,6 +122,7 @@ export async function createHttpServer(options: HttpServerOptions): Promise<Http
   registerHealthRoute(app);
   registerDevRoute(app, options);
   registerHookRoute(app, options);
+  registerScreenRoute(app, options);
   registerUsageRoute(app, options);
   registerWebSocketRoute(app, options, allowedHostnames);
   registerTerminalRoutes(app, {
@@ -224,6 +225,36 @@ function registerHookRoute(app: FastifyInstance, options: HttpServerOptions): vo
         options.onHookEvent?.(providerId, event);
       }
 
+      reply.send('ok');
+    },
+  );
+}
+
+// ── Live screen thumbnails ─────────────────────────────────────
+
+/** A capture client (a friend's machine) posts a small active-window thumbnail
+ *  here, keyed by its Claude session id; the server maps it to the agent and
+ *  broadcasts it to every office so the character shows a live monitor. */
+function registerScreenRoute(app: FastifyInstance, options: HttpServerOptions): void {
+  const store = options.store;
+  app.post<{ Body: { sessionId?: string; image?: string } }>(
+    '/api/screen',
+    {
+      preHandler: bearerAuth(options.token),
+      bodyLimit: 512 * 1024, // thumbnails are a few KB; allow headroom
+    },
+    async (request, reply) => {
+      const { sessionId, image } = request.body ?? {};
+      if (typeof sessionId !== 'string' || typeof image !== 'string') {
+        reply.code(400).send({ ok: false, msg: 'sessionId and image required' });
+        return;
+      }
+      for (const agent of store.values()) {
+        if (agent.sessionId === sessionId) {
+          store.broadcast({ type: 'agentScreenThumbnail', id: agent.id, image });
+          break;
+        }
+      }
       reply.send('ok');
     },
   );

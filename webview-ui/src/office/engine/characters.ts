@@ -70,6 +70,7 @@ export function createCharacter(
     path: [],
     moveProgress: 0,
     currentTool: null,
+    screenImage: null,
     palette,
     repeat,
     frame: 0,

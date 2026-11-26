@@ -192,6 +192,8 @@ export interface Character extends Blinker {
   moveProgress: number;
   /** Current tool name for typing vs reading animation, or null */
   currentTool: string | null;
+  /** Latest live active-window thumbnail as a data URL, or null (Feature B). */
+  screenImage?: string | null;
   /** Palette index (0-5) */
   palette: number;
   /** Which copy of its character this is (0 = the first, n = its nth repeat,

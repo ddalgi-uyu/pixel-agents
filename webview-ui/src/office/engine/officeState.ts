@@ -1193,6 +1193,13 @@ export class OfficeState {
     ch.contextReported = true;
   }
 
+  /** Update an agent's live screen thumbnail (Feature B); empty string clears it. */
+  setAgentScreen(id: number, image: string): void {
+    const ch = this.characters.get(id);
+    if (!ch) return;
+    ch.screenImage = image ? image : null;
+  }
+
   update(dt: number): void {
     // Furniture animation cycling
     const prevFrame = Math.floor(this.furnitureAnimTimer / FURNITURE_ANIM_INTERVAL_SEC);

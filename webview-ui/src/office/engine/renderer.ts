@@ -35,6 +35,10 @@ import {
   ROTATE_BUTTON_BG,
   ROTATE_BUTTON_HOVER_BG,
   SEAT_AVAILABLE_COLOR,
+  SCREEN_MONITOR_ASPECT,
+  SCREEN_MONITOR_FRAME_COLOR,
+  SCREEN_MONITOR_GAP_PX,
+  SCREEN_MONITOR_WIDTH_SCALE,
   SEAT_BUSY_COLOR,
   SEAT_OWN_COLOR,
   SELECTED_OUTLINE_ALPHA,
@@ -77,6 +81,23 @@ import type {
   RotateButtonBounds,
 } from './selectionButtons.js';
 import { buttonGeometry, placeSelectionButtons, restingBounds } from './selectionButtons.js';
+
+// ── Live screen thumbnails (Feature B) ──────────────────────────
+// Decode each agent's latest thumbnail data URL into an <img> once, keyed by
+// agent id; a changed URL replaces the entry. Drawn only once it has loaded.
+const screenImageCache = new Map<number, { url: string; img: HTMLImageElement }>();
+function getScreenImage(id: number, url: string): HTMLImageElement | null {
+  let entry = screenImageCache.get(id);
+  if (!entry || entry.url !== url) {
+    const img = new Image();
+    img.src = url;
+    entry = { url, img };
+    screenImageCache.set(id, entry);
+  }
+  // Checked every frame: `complete` flips true once the data URL has decoded,
+  // without relying on an onload callback (which headless virtual-time skips).
+  return entry.img.complete && entry.img.naturalWidth > 0 ? entry.img : null;
+}
 
 // ── Settings ────────────────────────────────────────────────────
 
@@ -461,6 +482,26 @@ export function renderScene(
         c.restore();
       },
     });
+
+    // Live screen "monitor" floating above the character's head (Feature B).
+    // Frame draws as soon as a screen is set; the thumbnail fills in once its
+    // <img> has decoded (so there's no flicker-in/out while it loads).
+    if (ch.screenImage) {
+      const scrImg = getScreenImage(ch.id, ch.screenImage);
+      const mw = Math.round(cached.width * SCREEN_MONITOR_WIDTH_SCALE);
+      const mh = Math.round(mw * SCREEN_MONITOR_ASPECT);
+      const mx = Math.round(offsetX + ch.x * zoom - mw / 2);
+      const my = drawY - mh - Math.round(SCREEN_MONITOR_GAP_PX * zoom);
+      const border = Math.max(1, Math.round(zoom / 2));
+      drawables.push({
+        zY: charZY + 100000, // float above nearby entities
+        draw: (c) => {
+          c.fillStyle = SCREEN_MONITOR_FRAME_COLOR;
+          c.fillRect(mx - border, my - border, mw + border * 2, mh + border * 2);
+          if (scrImg) c.drawImage(scrImg, mx, my, mw, mh);
+        },
+      });
+    }
   }
 
   // ── Pets ──────────────────────────────────────────────

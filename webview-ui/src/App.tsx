@@ -13,6 +13,7 @@ import { IntroBubble } from './components/IntroBubble.js';
 import { LoadingScene } from './components/LoadingScene.js';
 import { MigrationNotice } from './components/MigrationNotice.js';
 import { SpeechBar } from './components/SpeechBar.js';
+import { WhoAreYou } from './components/WhoAreYou.js';
 import { SettingsModal } from './components/SettingsModal.js';
 import { TerminalDrawer } from './components/TerminalDrawer.js';
 import { TerminalHideRibbon } from './components/TerminalHideRibbon.js';
@@ -148,7 +149,9 @@ function App() {
   // The Layout editor's panel, kept on screen while it rolls shut.
   const editorPanel = usePresence(editor.isEditMode);
   const sidebar = useConversationSidebar(terminalAvailable, officeReadOnly);
-  const { hasSidebar } = sidebar;
+  // Conversations sidebar removed for the shared-office build; "pick your
+  // character" moved to the WhoAreYou startup prompt instead.
+  const hasSidebar = false;
   // The phone menu (recent conversations + Settings).
   const menu = useMobileMenu();
   const [isCharactersOpen, setIsCharactersOpen] = useState(false);
@@ -177,6 +180,19 @@ function App() {
     useCallback((onChange: () => void) => getOfficeState().subscribeSelection(onChange), []),
     () => getOfficeState().selectedAgentId,
   );
+
+  // Which character is "me" (standalone browser), chosen once via the WhoAreYou
+  // startup prompt and remembered per browser.
+  const [meId, setMeId] = useState<number | null>(() => {
+    if (!isBrowserRuntime) return null;
+    const v = localStorage.getItem('pixelAgentsMeId');
+    return v !== null && v !== '' ? Number(v) : null;
+  });
+  const chooseMe = useCallback((id: number | null) => {
+    if (id === null) localStorage.removeItem('pixelAgentsMeId');
+    else localStorage.setItem('pixelAgentsMeId', String(id));
+    setMeId(id);
+  }, []);
 
   // Standalone only: every input here stays false/empty under VS Code. Owns the
   // active tab on both shells; the desktop-only bits (isOpen, width, resize)
@@ -585,8 +601,17 @@ function App() {
             />
           )}
 
-          {/* Type a line to make your own character speak (standalone browser). */}
-          <SpeechBar focusedAgentId={focusedAgentId} getOfficeState={getOfficeState} />
+          {/* Startup: pick which character is you (standalone browser). */}
+          {meId === null && (
+            <WhoAreYou agentIds={cardAgents} getOfficeState={getOfficeState} onPick={chooseMe} />
+          )}
+
+          {/* Type a line to make your own character speak. */}
+          <SpeechBar
+            meId={meId}
+            getOfficeState={getOfficeState}
+            onChangeCharacter={() => chooseMe(null)}
+          />
 
           {/* Vignette overlay */}
           <div

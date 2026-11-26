@@ -243,6 +243,7 @@ function normalizeHookEvent(
           source: typeof raw.source === 'string' ? raw.source : undefined,
           transcriptPath: typeof raw.transcript_path === 'string' ? raw.transcript_path : undefined,
           cwd: typeof raw.cwd === 'string' ? raw.cwd : undefined,
+          hostname: typeof raw.hostname === 'string' ? raw.hostname : undefined,
         },
       };
 

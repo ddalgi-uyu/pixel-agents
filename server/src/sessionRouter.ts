@@ -6,6 +6,8 @@ export interface PendingExternalSession {
   /** Transcript file path. Undefined for providers without transcripts (OpenCode, Copilot). */
   transcriptPath: string | undefined;
   cwd: string;
+  /** Machine the session runs on, from a remote hook (friends over LAN). */
+  hostname?: string;
 }
 
 /** An event waiting to be dispatched once its agent registers. */

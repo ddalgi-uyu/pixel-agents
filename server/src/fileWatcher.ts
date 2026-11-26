@@ -1038,6 +1038,9 @@ export function adoptExternalSessionFromHook(
 
   persistAgents: () => void,
   onAgentCreated?: (agent: AgentState) => void,
+  /** Machine name for a remote hooks-only session (friends over LAN); used as
+   *  the character's label so you can tell whose agent is whose. */
+  sourceHost?: string,
 ): void {
   if (transcriptPath) {
     // File-based provider (Claude, Codex): adopt with JSONL file watching
@@ -1081,10 +1084,12 @@ export function adoptExternalSessionFromHook(
       onAgentCreated?.(adoptedAgent);
     }
   } else {
-    // Hooks-only provider (OpenCode, Copilot): no transcript file, all state from hooks
+    // Hooks-only provider (OpenCode, Copilot) or a remote friend over LAN: no
+    // transcript file, all state from hooks. A remote hook's hostname labels the
+    // character by machine; otherwise fall back to the cwd-derived directory name.
     const id = nextAgentIdRef.current++;
     const directoryName =
-      directoryNameResolver?.({ cwd }) ?? (cwd ? path.basename(cwd) : undefined);
+      sourceHost ?? directoryNameResolver?.({ cwd }) ?? (cwd ? path.basename(cwd) : undefined);
     const agent = createAgentState({
       id,
       sessionId,

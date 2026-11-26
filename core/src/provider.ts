@@ -67,6 +67,9 @@ export type AgentEvent =
       /** Working directory the session was started in. Used to match pending
        *  external sessions against known Directories. */
       cwd?: string;
+      /** Hostname of the machine the session runs on. Set by remote hook scripts
+       *  (friends over LAN) so their character can be labelled by machine. */
+      hostname?: string;
     }
   | { kind: 'sessionEnd'; reason?: string };
 

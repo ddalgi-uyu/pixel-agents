@@ -5,6 +5,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import Fastify from 'fastify';
 
 import { agentCreatedMessage } from './agentMessages.js';
+import { createAgentState } from './agentState.js';
 import type { AgentRuntime } from './agentRuntime.js';
 import type { AgentStateStore } from './agentStateStore.js';
 import type {
@@ -119,6 +120,7 @@ export async function createHttpServer(options: HttpServerOptions): Promise<Http
   const allowedHostnames = privilegedHostnames(host, options.allowedHosts ?? []);
 
   registerHealthRoute(app);
+  registerDevRoute(app, options);
   registerHookRoute(app, options);
   registerUsageRoute(app, options);
   registerWebSocketRoute(app, options, allowedHostnames);
@@ -135,6 +137,53 @@ export async function createHttpServer(options: HttpServerOptions): Promise<Http
   const port = typeof address === 'object' ? (address?.port ?? 0) : 0;
 
   return { app, port };
+}
+
+// ── Dev-only synthetic agents (PIXEL_AGENTS_DEV=1) ───────────────
+// Lets development/verification inject a character without a live Claude Code
+// session: POST /api/dev/spawn {name?} creates an agent and animates it;
+// POST /api/dev/despawn {id} removes it. Never registered in normal runs.
+let devAgentCounter = 900000;
+
+function registerDevRoute(app: FastifyInstance, options: HttpServerOptions): void {
+  if (process.env['PIXEL_AGENTS_DEV'] !== '1') return;
+  const store = options.store;
+
+  app.post('/api/dev/spawn', async (request) => {
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const id = devAgentCounter++;
+    const name = typeof body['name'] === 'string' ? body['name'] : `Dev-${id}`;
+    const agent = createAgentState({
+      id,
+      sessionId: `dev-${id}`,
+      projectDir: '/dev',
+      jsonlFile: '',
+      isExternal: true,
+      directoryName: name,
+      hooksOnly: true,
+    });
+    store.set(id, agent);
+    store.broadcast(agentCreatedMessage(id, agent));
+    store.broadcast({ type: 'agentStatus', id, status: 'active' });
+    store.broadcast({
+      type: 'agentToolStart',
+      id,
+      toolId: `dev-${id}-t`,
+      toolName: 'Edit',
+      status: 'Editing dev.ts',
+    });
+    return { ok: true, id };
+  });
+
+  app.post('/api/dev/despawn', async (request) => {
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const id = Number(body['id']);
+    if (Number.isFinite(id) && store.has(id)) {
+      store.delete(id);
+      store.broadcast({ type: 'agentClosed', id });
+    }
+    return { ok: true };
+  });
 }
 
 // ── Health ──────────────────────────────────────────────────────

@@ -1194,10 +1194,11 @@ export class OfficeState {
   }
 
   /** Update an agent's live screen thumbnail (Feature B); empty string clears it. */
-  setAgentScreen(id: number, image: string): void {
+  setAgentScreen(id: number, image: string, app?: string): void {
     const ch = this.characters.get(id);
     if (!ch) return;
     ch.screenImage = image ? image : null;
+    ch.screenApp = app ? app : null;
   }
 
   update(dt: number): void {

@@ -221,6 +221,7 @@ export interface AgentScreenThumbnail {
   type: 'agentScreenThumbnail';
   id: number;
   image: string;
+  app?: string;
 }
 
 export interface LayoutLoaded {

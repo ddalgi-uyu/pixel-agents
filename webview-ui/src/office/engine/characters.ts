@@ -71,6 +71,7 @@ export function createCharacter(
     moveProgress: 0,
     currentTool: null,
     screenImage: null,
+    screenApp: null,
     palette,
     repeat,
     frame: 0,

@@ -78,6 +78,62 @@ def discover_session():
     return os.path.splitext(os.path.basename(newest))[0]
 
 
+# ---------- active app name ----------
+
+_APP_EMOJI = [
+    (("isaac", "omniverse", "kit"), "🤖"), (("blender",), "🎨"), (("unreal",), "🎮"),
+    (("code", "cursor", "vscode", "codium", "pycharm", "idea"), "💻"),
+    (("firefox", "chrome", "chromium", "brave", "edge"), "🔎"),
+    (("terminal", "konsole", "kitty", "alacritty", "wezterm"), "⌨️"),
+    (("obsidian", "typora"), "📝"), (("slack", "discord", "zoom", "teams"), "💬"),
+]
+
+
+def active_app():
+    """Short label for the focused app, e.g. '💻 code' or '🤖 isaac'. Best-effort."""
+    try:
+        if IS_WINDOWS:
+            u = ctypes.windll.user32
+            k = ctypes.windll.kernel32
+            from ctypes import wintypes
+            u.GetForegroundWindow.restype = wintypes.HWND
+            u.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+            hwnd = u.GetForegroundWindow()
+            pid = wintypes.DWORD()
+            u.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+            k.OpenProcess.restype = wintypes.HANDLE
+            h = k.OpenProcess(0x1000, False, pid.value)
+            if not h:
+                return ""
+            buf = ctypes.create_unicode_buffer(32768)
+            size = wintypes.DWORD(32768)
+            name = ""
+            if k.QueryFullProcessImageNameW(h, 0, buf, ctypes.byref(size)):
+                name = re.sub(r"\.exe$", "", os.path.basename(buf.value), flags=re.I)
+            k.CloseHandle(h)
+            raw = name.lower()
+        elif IS_MAC:
+            raw = _sh(["osascript", "-e",
+                       'tell application "System Events" to get name of first '
+                       'application process whose frontmost is true']).strip().lower()
+            name = raw
+        else:
+            m = re.search(r"0x[0-9a-fA-F]+", _sh(["xprop", "-root", "_NET_ACTIVE_WINDOW"]))
+            if not m:
+                return ""
+            classes = re.findall(r'"([^"]*)"', _sh(["xprop", "-id", m.group(0), "WM_CLASS"]))
+            raw = " ".join(classes).lower()
+            name = re.split(r"[\s._-]+", classes[-1])[-1] if classes else ""
+        if not raw:
+            return ""
+        for keys, emoji in _APP_EMOJI:
+            if any(k in raw for k in keys):
+                return f"{emoji} {name or keys[0]}"
+        return f"🖥 {name}" if name else ""
+    except Exception:
+        return ""
+
+
 # ---------- active window geometry ----------
 
 def screen_size():
@@ -176,9 +232,10 @@ def grab_jpeg(geom):
         return None
 
 
-def push(session, jpg):
+def push(session, jpg, app):
     data_url = "data:image/jpeg;base64," + base64.b64encode(jpg).decode("ascii")
-    body = ('{"sessionId":%s,"image":%s}' % (_json_str(session), _json_str(data_url))).encode()
+    body = ('{"sessionId":%s,"image":%s,"app":%s}' % (
+        _json_str(session), _json_str(data_url), _json_str(app))).encode()
     req = urllib.request.Request(
         f"{OFFICE}/api/screen", data=body,
         headers={"Content-Type": "application/json", "Authorization": f"Bearer {TOKEN}"})
@@ -212,7 +269,7 @@ def main():
             jpg = grab_jpeg(active_geom())
             if jpg:
                 try:
-                    code = push(session, jpg)
+                    code = push(session, jpg, active_app())
                     if code != 200:
                         print(f"⚠️  POST {code}")
                 except Exception as e:

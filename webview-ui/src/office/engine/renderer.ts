@@ -38,6 +38,9 @@ import {
   SCREEN_MONITOR_ASPECT,
   SCREEN_MONITOR_FRAME_COLOR,
   SCREEN_MONITOR_GAP_PX,
+  SCREEN_MONITOR_TITLE_BG_COLOR,
+  SCREEN_MONITOR_TITLE_FONT,
+  SCREEN_MONITOR_TITLE_TEXT_COLOR,
   SCREEN_MONITOR_WIDTH_SCALE,
   SEAT_BUSY_COLOR,
   SEAT_OWN_COLOR,
@@ -493,12 +496,28 @@ export function renderScene(
       const mx = Math.round(offsetX + ch.x * zoom - mw / 2);
       const my = drawY - mh - Math.round(SCREEN_MONITOR_GAP_PX * zoom);
       const border = Math.max(1, Math.round(zoom / 2));
+      const app = ch.screenApp;
+      const titleH = app ? Math.max(8, Math.round(mh * 0.22)) : 0;
       drawables.push({
         zY: charZY + 100000, // float above nearby entities
         draw: (c) => {
           c.fillStyle = SCREEN_MONITOR_FRAME_COLOR;
           c.fillRect(mx - border, my - border, mw + border * 2, mh + border * 2);
           if (scrImg) c.drawImage(scrImg, mx, my, mw, mh);
+          if (app) {
+            // Window-style title bar across the top with the app label.
+            c.fillStyle = SCREEN_MONITOR_TITLE_BG_COLOR;
+            c.fillRect(mx, my, mw, titleH);
+            c.fillStyle = SCREEN_MONITOR_TITLE_TEXT_COLOR;
+            c.font = `${Math.max(7, titleH - 3)}px ${SCREEN_MONITOR_TITLE_FONT}`;
+            c.textBaseline = 'middle';
+            c.save();
+            c.beginPath();
+            c.rect(mx, my, mw, titleH);
+            c.clip();
+            c.fillText(app, mx + 3, my + titleH / 2);
+            c.restore();
+          }
         },
       });
     }

@@ -93,6 +93,9 @@ export const SCREEN_MONITOR_FRAME_COLOR = '#0a0a14';
 export const SCREEN_MONITOR_WIDTH_SCALE = 2.6; // monitor width = char sprite width × this
 export const SCREEN_MONITOR_ASPECT = 9 / 16; // height / width
 export const SCREEN_MONITOR_GAP_PX = 6; // gap above the head, in sprite px
+export const SCREEN_MONITOR_TITLE_BG_COLOR = '#1b1f2a';
+export const SCREEN_MONITOR_TITLE_TEXT_COLOR = '#ffffff';
+export const SCREEN_MONITOR_TITLE_FONT = '"FS Pixel Sans", monospace';
 /** --color-danger, --color-accent, --color-shadow (index.css): canvas can't read CSS variables. */
 export const DELETE_BUTTON_BG = '#d14249';
 export const ROTATE_BUTTON_BG = '#6030ff';

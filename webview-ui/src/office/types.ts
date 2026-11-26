@@ -194,6 +194,8 @@ export interface Character extends Blinker {
   currentTool: string | null;
   /** Latest live active-window thumbnail as a data URL, or null (Feature B). */
   screenImage?: string | null;
+  /** Short label of the app shown in the thumbnail (monitor title), or null. */
+  screenApp?: string | null;
   /** Palette index (0-5) */
   palette: number;
   /** Which copy of its character this is (0 = the first, n = its nth repeat,

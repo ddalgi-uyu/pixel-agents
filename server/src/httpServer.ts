@@ -237,21 +237,26 @@ function registerHookRoute(app: FastifyInstance, options: HttpServerOptions): vo
  *  broadcasts it to every office so the character shows a live monitor. */
 function registerScreenRoute(app: FastifyInstance, options: HttpServerOptions): void {
   const store = options.store;
-  app.post<{ Body: { sessionId?: string; image?: string } }>(
+  app.post<{ Body: { sessionId?: string; image?: string; app?: string } }>(
     '/api/screen',
     {
       preHandler: bearerAuth(options.token),
       bodyLimit: 512 * 1024, // thumbnails are a few KB; allow headroom
     },
     async (request, reply) => {
-      const { sessionId, image } = request.body ?? {};
+      const { sessionId, image, app: appLabel } = request.body ?? {};
       if (typeof sessionId !== 'string' || typeof image !== 'string') {
         reply.code(400).send({ ok: false, msg: 'sessionId and image required' });
         return;
       }
       for (const agent of store.values()) {
         if (agent.sessionId === sessionId) {
-          store.broadcast({ type: 'agentScreenThumbnail', id: agent.id, image });
+          store.broadcast({
+            type: 'agentScreenThumbnail',
+            id: agent.id,
+            image,
+            ...(typeof appLabel === 'string' && appLabel ? { app: appLabel } : {}),
+          });
           break;
         }
       }

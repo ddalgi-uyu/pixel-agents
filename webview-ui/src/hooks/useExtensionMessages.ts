@@ -634,7 +634,7 @@ export function useExtensionMessages(
           playDoneSound();
         }
       } else if (msg.type === 'agentScreenThumbnail') {
-        os.setAgentScreen(msg.id as number, msg.image as string);
+        os.setAgentScreen(msg.id as number, msg.image as string, msg.app as string | undefined);
       } else if (msg.type === 'agentToolPermission') {
         const id = msg.id as number;
         setAgentTools((prev) => {

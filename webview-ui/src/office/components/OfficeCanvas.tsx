@@ -671,6 +671,7 @@ export function OfficeCanvas({
         if (officeState.selectedAgentId === hitId) {
           officeState.selectedAgentId = null;
           officeState.cameraFollowId = null;
+          panRef.current = { x: 0, y: 0 }; // recenter the map
         } else {
           officeState.selectedAgentId = hitId;
           officeState.cameraFollowId = hitId;
@@ -723,12 +724,13 @@ export function OfficeCanvas({
             }
           }
         }
-        // Clicked empty space — deselect
+        // Clicked empty space — deselect and recenter the map
         officeState.selectedAgentId = null;
         officeState.cameraFollowId = null;
+        panRef.current = { x: 0, y: 0 };
       }
     },
-    [officeState, onClick, screenToWorld, screenToTile, tapSelectsFirst],
+    [officeState, onClick, screenToWorld, screenToTile, tapSelectsFirst, panRef],
   );
 
   const handleClick = useCallback(

@@ -182,11 +182,12 @@ function App() {
     () => getOfficeState().selectedAgentId,
   );
 
-  // Which character is "me" (standalone browser), chosen once via the WhoAreYou
-  // startup prompt and remembered per browser.
+  // Which character is "me" (standalone browser), chosen via the WhoAreYou
+  // startup prompt. sessionStorage, not localStorage: every NEW browser session
+  // asks again ("choose at the beginning"), while a same-tab reload keeps it.
   const [meId, setMeId] = useState<number | null>(() => {
     if (!isBrowserRuntime) return null;
-    const v = localStorage.getItem('pixelAgentsMeId');
+    const v = sessionStorage.getItem('pixelAgentsMeId');
     return v !== null && v !== '' ? Number(v) : null;
   });
   // Remembers the last claimed id across the ⟳ null gap, so switching
@@ -195,9 +196,9 @@ function App() {
   const chooseMe = useCallback(
     (id: number | null) => {
       if (id === null) {
-        localStorage.removeItem('pixelAgentsMeId');
+        sessionStorage.removeItem('pixelAgentsMeId');
       } else {
-        localStorage.setItem('pixelAgentsMeId', String(id));
+        sessionStorage.setItem('pixelAgentsMeId', String(id));
         const prev = meId ?? lastMeIdRef.current;
         // Claim it: only claimed agents appear as characters on the map.
         transport.send({
@@ -225,13 +226,13 @@ function App() {
       transport.send({ type: 'claimAgent', id: meId });
     }
   }, [meId, cardAgents, chooseMe]);
-  // Skipping the picker hides it (remembered); a small 💬 button reopens it.
+  // Skipping the picker hides it for this browser session; 💬 reopens it.
   const [meSkipped, setMeSkipped] = useState<boolean>(
-    () => isBrowserRuntime && localStorage.getItem('pixelAgentsMeSkipped') === '1',
+    () => isBrowserRuntime && sessionStorage.getItem('pixelAgentsMeSkipped') === '1',
   );
   const skipMe = useCallback((skip: boolean) => {
-    if (skip) localStorage.setItem('pixelAgentsMeSkipped', '1');
-    else localStorage.removeItem('pixelAgentsMeSkipped');
+    if (skip) sessionStorage.setItem('pixelAgentsMeSkipped', '1');
+    else sessionStorage.removeItem('pixelAgentsMeSkipped');
     setMeSkipped(skip);
   }, []);
 

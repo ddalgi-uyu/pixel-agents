@@ -18,7 +18,6 @@ export function WhoAreYou({
   onSkip: () => void;
 }): React.JSX.Element | null {
   const t = useT();
-  if (agentIds.length === 0) return null;
   const label = (id: number): string =>
     getOfficeState().characters.get(id)?.directoryName ?? `Agent ${id}`;
 
@@ -51,6 +50,11 @@ export function WhoAreYou({
         <div style={{ color: 'var(--color-text-muted)', fontSize: 13, marginBottom: 14 }}>
           {t('pickYourCharacter')}
         </div>
+        {agentIds.length === 0 && (
+          <div style={{ color: 'var(--color-text-muted)', fontSize: 13, marginBottom: 12 }}>
+            {t('noAgentsYet')}
+          </div>
+        )}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {agentIds.map((id) => (
             <button

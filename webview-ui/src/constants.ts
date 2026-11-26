@@ -122,7 +122,7 @@ export const CAMERA_FOLLOW_SNAP_THRESHOLD = 0.5;
 // ── Zoom ─────────────────────────────────────────────────────
 export const ZOOM_MIN = 1;
 export const ZOOM_MAX = 10;
-export const ZOOM_DEFAULT_DPR_FACTOR = 2;
+export const ZOOM_DEFAULT_DPR_FACTOR = 3.2; // 1.6× the original default (bigger map by default)
 export const ZOOM_LEVEL_FADE_DELAY_MS = 1500;
 export const ZOOM_LEVEL_HIDE_DELAY_MS = 2000;
 export const ZOOM_LEVEL_FADE_DURATION_SEC = 0.5;

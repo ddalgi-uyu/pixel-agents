@@ -237,6 +237,7 @@ export interface AgentSpeech {
 export interface ClaimedAgents {
   type: 'claimedAgents';
   ids: number[];
+  names?: Record<string, string>;
 }
 
 export interface LayoutLoaded {
@@ -748,4 +749,5 @@ export interface ClaimAgent {
   type: 'claimAgent';
   id: number;
   previousId?: number;
+  name?: string;
 }

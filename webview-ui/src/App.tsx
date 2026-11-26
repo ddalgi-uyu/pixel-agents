@@ -194,17 +194,20 @@ function App() {
   // characters releases the old claim (one character per user).
   const lastMeIdRef = useRef<number | null>(null);
   const chooseMe = useCallback(
-    (id: number | null) => {
+    (id: number | null, name?: string) => {
       if (id === null) {
         sessionStorage.removeItem('pixelAgentsMeId');
       } else {
         sessionStorage.setItem('pixelAgentsMeId', String(id));
+        if (name) sessionStorage.setItem('pixelAgentsMeName', name);
         const prev = meId ?? lastMeIdRef.current;
-        // Claim it: only claimed agents appear as characters on the map.
+        // Claim it: only claimed agents appear as characters on the map, with
+        // the user's chosen name as the character label.
         transport.send({
           type: 'claimAgent',
           id,
           ...(prev !== null && prev !== id ? { previousId: prev } : {}),
+          ...(name ? { name } : {}),
         });
         lastMeIdRef.current = id;
       }
@@ -222,8 +225,9 @@ function App() {
       chooseMe(null);
     } else {
       // Re-assert the claim (idempotent) so a reconnect/server restart puts the
-      // remembered character back on the map.
-      transport.send({ type: 'claimAgent', id: meId });
+      // remembered character back on the map, keeping the chosen name.
+      const name = sessionStorage.getItem('pixelAgentsMeName') ?? '';
+      transport.send({ type: 'claimAgent', id: meId, ...(name ? { name } : {}) });
     }
   }, [meId, cardAgents, chooseMe]);
   // Skipping the picker hides it for this browser session; 💬 reopens it.

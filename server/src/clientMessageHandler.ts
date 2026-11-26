@@ -113,11 +113,18 @@ const KEY_SHOW_HOST_DIRECTORIES = 'pixel-agents.showHostDirectories';
  *  Only these are drawn on the map. In-memory — agent ids don't survive a
  *  restart anyway, so users re-pick after one (the office prompts them). */
 const claimedAgentIds = new Set<number>();
+/** The claimer's display name per claimed agent (their character label). */
+const claimedAgentNames = new Map<number, string>();
 
 /** The claimedAgents broadcast, pruned to agents that still exist. */
 function claimedAgentsMessage(store: AgentStateStore): Record<string, unknown> {
   const ids = [...claimedAgentIds].filter((id) => store.has(id));
-  return { type: 'claimedAgents', ids };
+  const names: Record<string, string> = {};
+  for (const id of ids) {
+    const name = claimedAgentNames.get(id);
+    if (name) names[String(id)] = name;
+  }
+  return { type: 'claimedAgents', ids, names };
 }
 
 /** The provider whose conversations the sidebar lists and resumes: the first
@@ -287,8 +294,15 @@ export function handleClientMessage(
       // user's earlier claim when switching.
       const id = msg.id as number;
       const prev = msg.previousId as number | undefined;
-      if (typeof prev === 'number') claimedAgentIds.delete(prev);
-      if (store.has(id)) claimedAgentIds.add(id);
+      const name = typeof msg.name === 'string' ? msg.name.trim().slice(0, 24) : '';
+      if (typeof prev === 'number') {
+        claimedAgentIds.delete(prev);
+        claimedAgentNames.delete(prev);
+      }
+      if (store.has(id)) {
+        claimedAgentIds.add(id);
+        if (name) claimedAgentNames.set(id, name);
+      }
       store.broadcast(claimedAgentsMessage(store));
       break;
     }

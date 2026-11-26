@@ -338,9 +338,9 @@ export function ToolOverlay({
                   >
                     {activityText}
                   </span>
-                  {ch.directoryName && (
+                  {(officeState.displayName(id) ?? ch.directoryName) && (
                     <span className="text-2xs leading-none overflow-hidden text-ellipsis block">
-                      {ch.directoryName}
+                      {officeState.displayName(id) ?? ch.directoryName}
                     </span>
                   )}
                 </div>

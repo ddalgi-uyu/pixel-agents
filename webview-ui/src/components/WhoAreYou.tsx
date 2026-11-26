@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { useT } from '../i18n.js';
 import type { OfficeState } from '../office/engine/officeState.js';
 
@@ -14,10 +16,11 @@ export function WhoAreYou({
 }: {
   agentIds: number[];
   getOfficeState: () => OfficeState;
-  onPick: (id: number) => void;
+  onPick: (id: number, name: string) => void;
   onSkip: () => void;
 }): React.JSX.Element | null {
   const t = useT();
+  const [name, setName] = useState('');
   const label = (id: number): string =>
     getOfficeState().characters.get(id)?.directoryName ?? `Agent ${id}`;
 
@@ -55,11 +58,31 @@ export function WhoAreYou({
             {t('noAgentsYet')}
           </div>
         )}
+        {agentIds.length > 0 && (
+          <input
+            value={name}
+            maxLength={24}
+            placeholder={t('yourName')}
+            onChange={(e) => setName(e.target.value)}
+            style={{
+              display: 'block',
+              width: '100%',
+              boxSizing: 'border-box',
+              marginBottom: 12,
+              background: 'var(--color-bg-dark)',
+              color: 'var(--color-text)',
+              border: '2px solid var(--color-border)',
+              borderRadius: 0,
+              padding: '6px 8px',
+              fontSize: 14,
+            }}
+          />
+        )}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {agentIds.map((id) => (
             <button
               key={id}
-              onClick={() => onPick(id)}
+              onClick={() => onPick(id, name.trim())}
               style={{
                 background: 'var(--color-accent)',
                 color: 'var(--color-text-on-accent)',

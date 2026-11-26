@@ -21,6 +21,7 @@ const STR: Record<string, Record<Lang, string>> = {
   changeCharacter: { en: 'Change which character is you', 'zh-TW': '更換你的角色' },
   language: { en: 'Language', 'zh-TW': '語言' },
   skip: { en: 'Skip', 'zh-TW': '略過' },
+  yourName: { en: 'Your name (shown above your character)', 'zh-TW': '你的名字（顯示在角色上方）' },
   noAgentsYet: {
     en: 'No working sessions yet — run `claude` on your machine and it will appear here.',
     'zh-TW': '目前沒有進行中的 session — 在你的電腦執行 `claude`，它就會出現在這裡。',

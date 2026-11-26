@@ -33,7 +33,7 @@ export function SpeechBar({
 
   if (!isBrowserRuntime || meId === null) return null;
 
-  const myName = getOfficeState().characters.get(meId)?.directoryName ?? `Agent ${meId}`;
+  const myName = getOfficeState().displayName(meId) ?? `Agent ${meId}`;
   const btn: React.CSSProperties = {
     background: 'var(--color-accent)',
     color: 'var(--color-text-on-accent)',

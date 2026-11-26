@@ -347,6 +347,11 @@ components:
           type: array
           items:
             type: integer
+        names:
+          type: object
+          description: Map of agent ID (string) to the claimer's display name.
+          additionalProperties:
+            type: string
 
     AgentSpeech:
       description: A custom line for an agent's character to say (speech bubble).
@@ -1336,6 +1341,9 @@ components:
           type: integer
         previousId:
           type: integer
+        name:
+          type: string
+          description: The user's display name, shown as their character's label.
 
     AgentSay:
       description: Make an agent's character say something (a speech bubble the user typed).

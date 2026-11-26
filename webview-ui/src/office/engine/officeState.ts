@@ -1326,9 +1326,20 @@ export class OfficeState {
   /** One character per user: only claimed agents (and their sub-agents) are
    *  drawn. Empty set = nothing claimed yet; the map waits for users to pick. */
   claimedAgentIds = new Set<number>();
+  /** The claimer's display name per claimed agent (their character label). */
+  claimedAgentNames = new Map<number, string>();
 
-  setClaimedAgents(ids: number[]): void {
+  setClaimedAgents(ids: number[], names?: Record<string, string>): void {
     this.claimedAgentIds = new Set(ids);
+    this.claimedAgentNames = new Map(
+      Object.entries(names ?? {}).map(([k, v]) => [Number(k), v]),
+    );
+  }
+
+  /** What a character's label should read: the claimer's chosen name, falling
+   *  back to the session's directory label. */
+  displayName(id: number): string | undefined {
+    return this.claimedAgentNames.get(id) ?? this.characters.get(id)?.directoryName;
   }
 
   /** Whether a character is on the map: claimed, or a sub-agent of a claimed

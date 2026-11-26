@@ -194,6 +194,15 @@ function App() {
     else localStorage.setItem('pixelAgentsMeId', String(id));
     setMeId(id);
   }, []);
+  // Skipping the picker hides it (remembered); a small 💬 button reopens it.
+  const [meSkipped, setMeSkipped] = useState<boolean>(
+    () => isBrowserRuntime && localStorage.getItem('pixelAgentsMeSkipped') === '1',
+  );
+  const skipMe = useCallback((skip: boolean) => {
+    if (skip) localStorage.setItem('pixelAgentsMeSkipped', '1');
+    else localStorage.removeItem('pixelAgentsMeSkipped');
+    setMeSkipped(skip);
+  }, []);
 
   // Standalone only: every input here stays false/empty under VS Code. Owns the
   // active tab on both shells; the desktop-only bits (isOpen, width, resize)
@@ -605,9 +614,39 @@ function App() {
           {/* Language switcher (EN / 繁中). */}
           <LanguageToggle />
 
-          {/* Startup: pick which character is you (standalone browser). */}
-          {meId === null && (
-            <WhoAreYou agentIds={cardAgents} getOfficeState={getOfficeState} onPick={chooseMe} />
+          {/* Startup: pick which character is you (standalone browser, skippable). */}
+          {meId === null && !meSkipped && (
+            <WhoAreYou
+              agentIds={cardAgents}
+              getOfficeState={getOfficeState}
+              onPick={chooseMe}
+              onSkip={() => skipMe(true)}
+            />
+          )}
+
+          {/* Skipped the picker: a small button to pick your character later. */}
+          {isBrowserRuntime && meId === null && meSkipped && (
+            <button
+              onClick={() => skipMe(false)}
+              title="Pick your character"
+              style={{
+                position: 'fixed',
+                left: '50%',
+                bottom: 12,
+                transform: 'translateX(-50%)',
+                zIndex: 50,
+                background: 'var(--color-panel)',
+                color: 'var(--color-text-muted)',
+                border: '2px solid var(--color-border)',
+                borderRadius: 0,
+                boxShadow: '2px 2px 0px var(--color-bg-dark)',
+                padding: '4px 10px',
+                cursor: 'pointer',
+                fontSize: 13,
+              }}
+            >
+              💬
+            </button>
           )}
 
           {/* Type a line to make your own character speak. */}

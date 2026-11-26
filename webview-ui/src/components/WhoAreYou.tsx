@@ -10,10 +10,12 @@ export function WhoAreYou({
   agentIds,
   getOfficeState,
   onPick,
+  onSkip,
 }: {
   agentIds: number[];
   getOfficeState: () => OfficeState;
   onPick: (id: number) => void;
+  onSkip: () => void;
 }): React.JSX.Element | null {
   const t = useT();
   if (agentIds.length === 0) return null;
@@ -65,6 +67,20 @@ export function WhoAreYou({
               {label(id)}
             </button>
           ))}
+          <button
+            onClick={onSkip}
+            style={{
+              background: 'var(--color-btn-bg)',
+              color: 'var(--color-text-muted)',
+              border: '2px solid var(--color-border)',
+              borderRadius: 0,
+              padding: '8px 14px',
+              cursor: 'pointer',
+              fontSize: 14,
+            }}
+          >
+            {t('skip')}
+          </button>
         </div>
       </div>
     </div>

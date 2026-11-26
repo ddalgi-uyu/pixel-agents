@@ -10,7 +10,7 @@ export function LanguageToggle(): React.JSX.Element | null {
     <div
       style={{
         position: 'fixed',
-        top: 58,
+        top: 108, // below the zoom +/- buttons (top-left stack)
         left: 10,
         zIndex: 60,
         display: 'flex',

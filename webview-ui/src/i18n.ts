@@ -20,6 +20,8 @@ const STR: Record<string, Record<Lang, string>> = {
   say: { en: 'Say', 'zh-TW': '發送' },
   changeCharacter: { en: 'Change which character is you', 'zh-TW': '更換你的角色' },
   language: { en: 'Language', 'zh-TW': '語言' },
+  skip: { en: 'Skip', 'zh-TW': '略過' },
+  pickLater: { en: 'Pick your character', 'zh-TW': '選擇你的角色' },
 };
 
 function detect(): Lang {

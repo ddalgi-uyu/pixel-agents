@@ -154,6 +154,27 @@ claude
 
 Open the office URL in a browser to watch everyone. Your character animates as your agent works (typing, reading, waiting).
 
+#### Easiest: let your Claude Code set it up for you
+
+You don't have to run the steps by hand — paste the prompt below into your own Claude Code. Fill in the **office URL** and **token** your host gives you privately (they're per-session secrets, so they're not in this file):
+
+```text
+Please set me up to join a shared Pixel Agents office on my friend's machine, following the
+"Share an office with your friends (LAN multiplayer)" section of this README:
+https://github.com/ddalgi-uyu/pixel-agents/blob/feat/lan-multiplayer-screens/README.md
+
+Connection details (from my host):
+  PIXEL_AGENTS_OFFICE=<office URL, e.g. http://192.168.31.191:3100>
+  PIXEL_AGENTS_OFFICE_TOKEN=<token>
+
+Do the one-time hook install (npx pixel-agents, approve the hook), export those two env vars in
+my shell, and start tools/pixel_screen_capture.py so my focused window shows on my character.
+Then tell me to run `claude` and confirm I should appear in their office.
+```
+
+> The LAN-multiplayer tools (`tools/pixel_screen_capture.py`, `tools/say.py`) live in this fork,
+> so the link points at it. If this README is on a different fork/branch, use that URL instead.
+
 ### 3. Show your screen (optional)
 
 Stream a small live thumbnail of your **focused window** to your character's "monitor" — plus an app badge (e.g. `💻 code`, `🤖 isaac`):

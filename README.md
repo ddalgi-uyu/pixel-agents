@@ -185,11 +185,13 @@ python3 tools/pixel_screen_capture.py
 
 Only the focused window is sent, downscaled, about once a second. Needs Python 3; on Linux it uses `ffmpeg` + `xprop`/`xwininfo`, on Windows/macOS `pip install pillow`.
 
-**Show your agent instead of whatever you're looking at.** By default it captures your *focused* window — but if you're watching the office in a browser, that's what friends see. Pin it to your agent's terminal so it always shows the agent working (Linux/X11; the terminal must be visible, e.g. side-by-side):
+**Show the app your agent is driving, not whatever you're looking at.** By default it captures your *focused* window — but if you're watching the office in a browser, that's what friends see. Instead, give it the apps your agent works in; the monitor **follows whichever is open/active** (Isaac Sim → Blender → …) and labels it, ignoring the office:
 
 ```bash
-PIXEL_AGENTS_CAPTURE_MATCH="claude" python3 tools/pixel_screen_capture.py   # or your terminal's name
+PIXEL_AGENTS_CAPTURE_MATCH="isaac,blender,unreal,code" python3 tools/pixel_screen_capture.py
 ```
+
+Comma-separated, in priority order. Linux/X11; the window must be visible (not fully covered). Falls back to the focused window if none are open.
 
 ### 4. Say something (optional)
 

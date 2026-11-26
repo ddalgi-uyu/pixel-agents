@@ -46,6 +46,9 @@ SESSION_ENV = os.environ.get("PIXEL_AGENTS_SESSION", "")
 # the agent is doing" while you watch the office in another window.
 # (Linux/X11; the window must be visible — a fully-covered window can't be grabbed.)
 CAPTURE_MATCH = os.environ.get("PIXEL_AGENTS_CAPTURE_MATCH", "")
+# Comma-separated app patterns the agent drives, e.g. "isaac,blender,unreal,code".
+# The monitor follows whichever is open/active and labels it accordingly.
+CAPTURE_PATTERNS = [p.strip().lower() for p in CAPTURE_MATCH.split(",") if p.strip()]
 INTERVAL = float(os.environ.get("SCREEN_INTERVAL", "1.5"))
 OUT_WIDTH = int(os.environ.get("SCREEN_WIDTH", "320"))
 QUALITY = int(os.environ.get("SCREEN_QUALITY", "70"))
@@ -205,37 +208,63 @@ def active_geom():
 
 # ---------- find a specific window (agent's terminal) ----------
 
-def match_window_geom(pattern):
-    """Geometry of the first visible window whose title/class contains `pattern`
-    (case-insensitive). Linux/X11 only; returns None elsewhere or if not found."""
-    if not pattern or not IS_LINUX:
+def _label_for(cls, title):
+    raw = (cls + " " + title).lower()
+    for keys, emoji in _APP_EMOJI:
+        hit = next((k for k in keys if k in raw), None)
+        if hit:
+            return f"{emoji} {hit}"
+    toks = [t for t in re.split(r"[\s._-]+", cls) if t]
+    return f"🖥 {toks[-1]}" if toks else ""
+
+
+def _list_windows():
+    """Visible top-level windows as (wid, title, wm_class, (x,y,w,h)). Linux/X11."""
+    out = []
+    if not IS_LINUX:
+        return out
+    rw, rh = screen_size()
+    for wid in re.findall(r"0x[0-9a-fA-F]+", _sh(["xprop", "-root", "_NET_CLIENT_LIST"])):
+        info = _sh(["xwininfo", "-id", wid])
+        if "Map State: IsViewable" not in info:
+            continue  # minimized / covered-unmapped — can't grab it
+
+        def g(p):
+            m = re.search(p, info)
+            return int(m.group(1)) if m else None
+
+        x, y = g(r"Absolute upper-left X:\s*(-?\d+)"), g(r"Absolute upper-left Y:\s*(-?\d+)")
+        w, h = g(r"Width:\s*(\d+)"), g(r"Height:\s*(\d+)")
+        if None in (x, y, w, h) or w < 50 or h < 50:
+            continue
+        nm = re.search(r'"(.*)"', _sh(["xprop", "-id", wid, "_NET_WM_NAME"]))
+        title = nm.group(1) if nm else ""
+        cls = " ".join(re.findall(r'"([^"]*)"', _sh(["xprop", "-id", wid, "WM_CLASS"])))
+        x = max(0, min(x, rw - 2)); y = max(0, min(y, rh - 2))
+        w = max(2, min(w, rw - x)); h = max(2, min(h, rh - y))
+        out.append((wid, title, cls, (x, y, w - w % 2, h - h % 2)))
+    return out
+
+
+def pick_app_window(patterns):
+    """Among the agent's apps (patterns), pick the window to show: the active one
+    if it's one of them, else the first open one in list order. Follows whichever
+    app the agent is driving (Isaac → Blender → …) and ignores the office/browser.
+    Returns (geom, label) or None. Linux/X11; the window must be visible."""
+    wins = _list_windows()
+    if not wins:
         return None
-    pat = pattern.lower()
-    try:
-        ids = re.findall(r"0x[0-9a-fA-F]+", _sh(["xprop", "-root", "_NET_CLIENT_LIST"]))
-        rw, rh = screen_size()
-        for wid in ids:
-            name = _sh(["xprop", "-id", wid, "_NET_WM_NAME"])
-            cls = _sh(["xprop", "-id", wid, "WM_CLASS"])
-            if pat not in (name + " " + cls).lower():
-                continue
-            info = _sh(["xwininfo", "-id", wid])
-            if "Map State: IsViewable" not in info:
-                continue  # minimized / unmapped — can't grab it
-
-            def g(p):
-                m = re.search(p, info)
-                return int(m.group(1)) if m else None
-
-            x, y = g(r"Absolute upper-left X:\s*(-?\d+)"), g(r"Absolute upper-left Y:\s*(-?\d+)")
-            w, h = g(r"Width:\s*(\d+)"), g(r"Height:\s*(\d+)")
-            if None in (x, y, w, h):
-                continue
-            x = max(0, min(x, rw - 2)); y = max(0, min(y, rh - 2))
-            w = max(2, min(w, rw - x)); h = max(2, min(h, rh - y))
-            return (x, y, w - w % 2, h - h % 2)
-    except Exception:
-        pass
+    am = re.search(r"0x[0-9a-fA-F]+", _sh(["xprop", "-root", "_NET_ACTIVE_WINDOW"]))
+    active = am.group(0) if am else None
+    # Prefer the currently focused window if it's one of the agent's apps.
+    for wid, title, cls, geom in wins:
+        if wid == active and any(p in (title + " " + cls).lower() for p in patterns):
+            return geom, _label_for(cls, title)
+    # Otherwise the first open app in the user's priority order.
+    for p in patterns:
+        for wid, title, cls, geom in wins:
+            if p in (title + " " + cls).lower():
+                return geom, _label_for(cls, title)
     return None
 
 
@@ -301,7 +330,7 @@ def main():
         print("❌ no Claude session found (no ~/.claude/projects/**/*.jsonl); "
               "set PIXEL_AGENTS_SESSION")
         sys.exit(1)
-    pin = f"pinned to window ~'{CAPTURE_MATCH}'" if CAPTURE_MATCH else "focused window"
+    pin = f"following apps [{', '.join(CAPTURE_PATTERNS)}]" if CAPTURE_PATTERNS else "focused window"
     print(f"Screen capture → {OFFICE}/api/screen  session={session[:8]}…  "
           f"({pin}, every {INTERVAL}s, width={OUT_WIDTH}px). Ctrl+C to stop.")
     last_session_check = 0.0
@@ -312,13 +341,15 @@ def main():
             if not SESSION_ENV and now - last_session_check > 10:
                 session = discover_session() or session
                 last_session_check = now
-            geom = match_window_geom(CAPTURE_MATCH) if CAPTURE_MATCH else active_geom()
-            if geom is None:
-                geom = active_geom()  # pinned window not found/visible -> fall back
+            picked = pick_app_window(CAPTURE_PATTERNS) if CAPTURE_PATTERNS else None
+            if picked:
+                geom, label = picked          # the agent's app (Isaac/Blender/…)
+            else:
+                geom, label = active_geom(), active_app()  # fall back to focused window
             jpg = grab_jpeg(geom)
             if jpg:
                 try:
-                    code = push(session, jpg, active_app())
+                    code = push(session, jpg, label)
                     if code != 200:
                         print(f"⚠️  POST {code}")
                 except Exception as e:

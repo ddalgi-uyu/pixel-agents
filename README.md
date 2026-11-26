@@ -202,6 +202,8 @@ python3 tools/say.py ""      # clear it
 
 Both tools read the same `PIXEL_AGENTS_OFFICE` / `PIXEL_AGENTS_OFFICE_TOKEN` env vars and auto-detect your current Claude session.
 
+**Or just type in the office.** In the browser there's a little chat box at the bottom: click your own character once to claim it (**This is me** — remembered per browser), then type and press Enter to pop a bubble over your head. No terminal needed.
+
 ### Reference
 
 | Env var | Used by | Meaning |

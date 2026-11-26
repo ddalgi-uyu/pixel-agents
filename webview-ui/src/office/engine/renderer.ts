@@ -47,6 +47,9 @@ import {
   SELECTED_OUTLINE_ALPHA,
   SELECTION_DASH_PATTERN,
   SELECTION_HIGHLIGHT_COLOR,
+  SPEECH_BUBBLE_BG_COLOR,
+  SPEECH_BUBBLE_FONT,
+  SPEECH_BUBBLE_TEXT_COLOR,
   VOID_TILE_DASH_PATTERN,
   VOID_TILE_OUTLINE_COLOR,
 } from '../../constants.js';
@@ -518,6 +521,35 @@ export function renderScene(
             c.fillText(app, mx + 3, my + titleH / 2);
             c.restore();
           }
+        },
+      });
+    }
+
+    // Custom speech bubble floating above the character (polish)
+    if (ch.speech) {
+      const text = ch.speech;
+      const fontPx = Math.max(9, Math.round(cached.width * 0.3));
+      const padX = Math.round(fontPx * 0.6);
+      const padY = Math.round(fontPx * 0.4);
+      const monH = ch.screenImage
+        ? Math.round(cached.width * SCREEN_MONITOR_WIDTH_SCALE * SCREEN_MONITOR_ASPECT) +
+          Math.round(SCREEN_MONITOR_GAP_PX * zoom)
+        : 0;
+      // Lift well above the head so it clears the DOM name/status label overlay.
+      const bubbleBottom = drawY - Math.round(34 * zoom) - monH;
+      drawables.push({
+        zY: charZY + 100001, // above the monitor
+        draw: (c) => {
+          c.font = `${fontPx}px ${SPEECH_BUBBLE_FONT}`;
+          c.textBaseline = 'middle';
+          const bw = Math.round(c.measureText(text).width + padX * 2);
+          const bh = fontPx + padY * 2;
+          const bx = Math.round(offsetX + ch.x * zoom - bw / 2);
+          const by = bubbleBottom - bh;
+          c.fillStyle = SPEECH_BUBBLE_BG_COLOR;
+          c.fillRect(bx, by, bw, bh);
+          c.fillStyle = SPEECH_BUBBLE_TEXT_COLOR;
+          c.fillText(text, bx + padX, by + bh / 2);
         },
       });
     }

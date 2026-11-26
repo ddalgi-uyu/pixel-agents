@@ -26,6 +26,7 @@ export type ServerMessage =
   | AgentTeamInfo
   | AgentContextUsage
   | AgentScreenThumbnail
+  | AgentSpeech
   | LayoutLoaded
   | FurnitureAssetsLoaded
   | CharacterProfilesLoaded
@@ -222,6 +223,12 @@ export interface AgentScreenThumbnail {
   id: number;
   image: string;
   app?: string;
+}
+
+export interface AgentSpeech {
+  type: 'agentSpeech';
+  id: number;
+  text: string;
 }
 
 export interface LayoutLoaded {

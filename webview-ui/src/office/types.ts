@@ -196,6 +196,10 @@ export interface Character extends Blinker {
   screenImage?: string | null;
   /** Short label of the app shown in the thumbnail (monitor title), or null. */
   screenApp?: string | null;
+  /** A custom thing this character is "saying" (speech bubble), or null. */
+  speech?: string | null;
+  /** Seconds left before the speech bubble fades. */
+  speechTimer?: number;
   /** Palette index (0-5) */
   palette: number;
   /** Which copy of its character this is (0 = the first, n = its nth repeat,

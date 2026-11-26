@@ -123,6 +123,7 @@ export async function createHttpServer(options: HttpServerOptions): Promise<Http
   registerDevRoute(app, options);
   registerHookRoute(app, options);
   registerScreenRoute(app, options);
+  registerSayRoute(app, options);
   registerUsageRoute(app, options);
   registerWebSocketRoute(app, options, allowedHostnames);
   registerTerminalRoutes(app, {
@@ -232,6 +233,12 @@ function registerHookRoute(app: FastifyInstance, options: HttpServerOptions): vo
 
 // ── Live screen thumbnails ─────────────────────────────────────
 
+/** Latest screen thumbnail per agent id, re-sent to each client on connect so a
+ *  (re)connecting office shows the current screen immediately instead of waiting
+ *  for the next push. In-memory only — never persisted (images would bloat the
+ *  state file). */
+const latestScreens = new Map<number, { image: string; app?: string }>();
+
 /** A capture client (a friend's machine) posts a small active-window thumbnail
  *  here, keyed by its Claude session id; the server maps it to the agent and
  *  broadcasts it to every office so the character shows a live monitor. */
@@ -251,12 +258,41 @@ function registerScreenRoute(app: FastifyInstance, options: HttpServerOptions): 
       }
       for (const agent of store.values()) {
         if (agent.sessionId === sessionId) {
+          const hasApp = typeof appLabel === 'string' && appLabel;
+          if (image) latestScreens.set(agent.id, { image, ...(hasApp ? { app: appLabel } : {}) });
+          else latestScreens.delete(agent.id);
           store.broadcast({
             type: 'agentScreenThumbnail',
             id: agent.id,
             image,
-            ...(typeof appLabel === 'string' && appLabel ? { app: appLabel } : {}),
+            ...(hasApp ? { app: appLabel } : {}),
           });
+          break;
+        }
+      }
+      reply.send('ok');
+    },
+  );
+}
+
+// ── Custom speech ──────────────────────────────────────────────
+
+/** Make a character say something: POST /api/say {sessionId, text} maps the
+ *  session to its agent and broadcasts a speech bubble to every office. */
+function registerSayRoute(app: FastifyInstance, options: HttpServerOptions): void {
+  const store = options.store;
+  app.post<{ Body: { sessionId?: string; text?: string } }>(
+    '/api/say',
+    { preHandler: bearerAuth(options.token) },
+    async (request, reply) => {
+      const { sessionId, text } = request.body ?? {};
+      if (typeof sessionId !== 'string' || typeof text !== 'string') {
+        reply.code(400).send({ ok: false, msg: 'sessionId and text required' });
+        return;
+      }
+      for (const agent of store.values()) {
+        if (agent.sessionId === sessionId) {
+          store.broadcast({ type: 'agentSpeech', id: agent.id, text: text.slice(0, 200) });
           break;
         }
       }
@@ -381,6 +417,20 @@ function registerWebSocketRoute(
           privileged,
           ptyManager: options.ptyManager,
         });
+        // Replay the latest cached screen thumbnails to a (re)connecting office,
+        // after its existingAgents snapshot has rebuilt the characters.
+        if (msg.type === 'webviewReady') {
+          for (const [id, scr] of latestScreens) {
+            if (store.has(id)) {
+              safeSend(socket, {
+                type: 'agentScreenThumbnail',
+                id,
+                image: scr.image,
+                ...(scr.app ? { app: scr.app } : {}),
+              });
+            }
+          }
+        }
       } catch {
         // Malformed JSON, ignore
       }

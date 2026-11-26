@@ -635,6 +635,8 @@ export function useExtensionMessages(
         }
       } else if (msg.type === 'agentScreenThumbnail') {
         os.setAgentScreen(msg.id as number, msg.image as string, msg.app as string | undefined);
+      } else if (msg.type === 'agentSpeech') {
+        os.setAgentSpeech(msg.id as number, msg.text as string);
       } else if (msg.type === 'agentToolPermission') {
         const id = msg.id as number;
         setAgentTools((prev) => {

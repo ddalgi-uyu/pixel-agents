@@ -72,6 +72,8 @@ export function createCharacter(
     currentTool: null,
     screenImage: null,
     screenApp: null,
+    speech: null,
+    speechTimer: 0,
     palette,
     repeat,
     frame: 0,

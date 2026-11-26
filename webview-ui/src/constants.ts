@@ -96,6 +96,13 @@ export const SCREEN_MONITOR_GAP_PX = 6; // gap above the head, in sprite px
 export const SCREEN_MONITOR_TITLE_BG_COLOR = '#1b1f2a';
 export const SCREEN_MONITOR_TITLE_TEXT_COLOR = '#ffffff';
 export const SCREEN_MONITOR_TITLE_FONT = '"FS Pixel Sans", monospace';
+
+// Custom speech bubbles (polish)
+export const SPEECH_DURATION_SEC = 6;
+export const SPEECH_MAX_CHARS = 80;
+export const SPEECH_BUBBLE_BG_COLOR = '#ffffff';
+export const SPEECH_BUBBLE_TEXT_COLOR = '#0a0a14';
+export const SPEECH_BUBBLE_FONT = '"FS Pixel Sans", monospace';
 /** --color-danger, --color-accent, --color-shadow (index.css): canvas can't read CSS variables. */
 export const DELETE_BUTTON_BG = '#d14249';
 export const ROTATE_BUTTON_BG = '#6030ff';

@@ -12,6 +12,8 @@ import {
   MAX_PET_ID_LENGTH,
   PET_HIT_HALF_WIDTH,
   PET_HIT_HEIGHT,
+  SPEECH_DURATION_SEC,
+  SPEECH_MAX_CHARS,
   WAITING_BUBBLE_DURATION_SEC,
 } from '../../constants.js';
 import { contextUsedShare } from '../contextGauge.js';
@@ -1201,6 +1203,19 @@ export class OfficeState {
     ch.screenApp = app ? app : null;
   }
 
+  /** Make an agent say something (custom speech bubble); empty text clears it. */
+  setAgentSpeech(id: number, text: string): void {
+    const ch = this.characters.get(id);
+    if (!ch) return;
+    if (text) {
+      ch.speech = text.slice(0, SPEECH_MAX_CHARS);
+      ch.speechTimer = SPEECH_DURATION_SEC;
+    } else {
+      ch.speech = null;
+      ch.speechTimer = 0;
+    }
+  }
+
   update(dt: number): void {
     // Furniture animation cycling
     const prevFrame = Math.floor(this.furnitureAnimTimer / FURNITURE_ANIM_INTERVAL_SEC);
@@ -1253,6 +1268,15 @@ export class OfficeState {
         if (ch.bubbleTimer <= 0) {
           ch.bubbleType = null;
           ch.bubbleTimer = 0;
+        }
+      }
+
+      // Tick custom speech bubble, fading it out when it expires
+      if (ch.speech && ch.speechTimer !== undefined) {
+        ch.speechTimer -= dt;
+        if (ch.speechTimer <= 0) {
+          ch.speech = null;
+          ch.speechTimer = 0;
         }
       }
     }

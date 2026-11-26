@@ -12,6 +12,7 @@ import { EditActionBar } from './components/EditActionBar.js';
 import { IntroBubble } from './components/IntroBubble.js';
 import { LoadingScene } from './components/LoadingScene.js';
 import { MigrationNotice } from './components/MigrationNotice.js';
+import { LanguageToggle } from './components/LanguageToggle.js';
 import { SpeechBar } from './components/SpeechBar.js';
 import { WhoAreYou } from './components/WhoAreYou.js';
 import { SettingsModal } from './components/SettingsModal.js';
@@ -600,6 +601,9 @@ function App() {
               mobile={isMobile}
             />
           )}
+
+          {/* Language switcher (EN / 繁中). */}
+          <LanguageToggle />
 
           {/* Startup: pick which character is you (standalone browser). */}
           {meId === null && (

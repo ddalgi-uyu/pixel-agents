@@ -1,3 +1,4 @@
+import { useT } from '../i18n.js';
 import type { OfficeState } from '../office/engine/officeState.js';
 
 /**
@@ -14,6 +15,7 @@ export function WhoAreYou({
   getOfficeState: () => OfficeState;
   onPick: (id: number) => void;
 }): React.JSX.Element | null {
+  const t = useT();
   if (agentIds.length === 0) return null;
   const label = (id: number): string =>
     getOfficeState().characters.get(id)?.directoryName ?? `Agent ${id}`;
@@ -39,9 +41,11 @@ export function WhoAreYou({
           maxWidth: 560,
         }}
       >
-        <div style={{ color: 'var(--color-text)', fontSize: 18, marginBottom: 4 }}>Who are you?</div>
+        <div style={{ color: 'var(--color-text)', fontSize: 18, marginBottom: 4 }}>
+          {t('whoAreYou')}
+        </div>
         <div style={{ color: 'var(--color-text-muted)', fontSize: 13, marginBottom: 14 }}>
-          Pick your character — the agent that is you in this office.
+          {t('pickYourCharacter')}
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {agentIds.map((id) => (

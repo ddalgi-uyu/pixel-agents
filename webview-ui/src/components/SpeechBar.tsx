@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 
+import { useT } from '../i18n.js';
 import type { OfficeState } from '../office/engine/officeState.js';
 import { isBrowserRuntime } from '../runtime.js';
 import { transport } from '../transport/index.js';
@@ -20,6 +21,7 @@ export function SpeechBar({
   getOfficeState: () => OfficeState;
   onChangeCharacter: () => void;
 }): React.JSX.Element | null {
+  const t = useT();
   const [text, setText] = useState('');
 
   const say = useCallback(() => {
@@ -62,7 +64,7 @@ export function SpeechBar({
       <input
         value={text}
         maxLength={MAX_LEN}
-        placeholder={`Say something as ${myName}…`}
+        placeholder={`${t('sayAs')} ${myName}…`}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') say();
@@ -78,11 +80,11 @@ export function SpeechBar({
         }}
       />
       <button style={btn} onClick={say}>
-        Say
+        {t('say')}
       </button>
       <button
         style={{ ...btn, background: 'var(--color-btn-bg)', color: 'var(--color-text)' }}
-        title="Change which character is you"
+        title={t('changeCharacter')}
         onClick={onChangeCharacter}
       >
         ⟳
